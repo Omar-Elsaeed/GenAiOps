@@ -1,0 +1,5 @@
+{
+  "name": "GenAiOps Hub",
+  "description": "A comprehensive GenAiOps system for companies to monitor, analyze, and optimize their generative AI operations. Features an AI-powered log analyzer and a prompt optimization playground.",
+  "requestFramePermissions": []
+}
