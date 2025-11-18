@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { MOCK_MODEL_EVALUATIONS, ArrowsRightLeftIcon } from '../constants';
 import type { ModelEval } from '../types';
@@ -35,6 +36,25 @@ const ComparisonTable: React.FC<{ evals: ModelEval[] }> = ({ evals }) => (
     </div>
 );
 
+// Custom styled tooltip for the chart
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-xl">
+                <p className="label font-bold text-gray-500">{`Date: ${label}`}</p>
+                {payload.map((pld: any) => (
+                    pld.stroke !== 'transparent' && (
+                        <div key={pld.dataKey} style={{ color: pld.stroke }}>
+                            <span className="font-semibold">{pld.name}:</span> {pld.value.toFixed(3)}
+                        </div>
+                    )
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
 
 export const ModelEvaluationView: React.FC = () => {
     const [selectedEvalIds, setSelectedEvalIds] = useState<string[]>(() => {
@@ -43,6 +63,8 @@ export const ModelEvaluationView: React.FC = () => {
         return evals.length >= 2 ? [evals[evals.length - 1].id, evals[evals.length - 2].id] : [];
     });
     
+    const [hiddenChartLines, setHiddenChartLines] = useState<Set<string>>(new Set());
+
     const latestEval = MOCK_MODEL_EVALUATIONS[MOCK_MODEL_EVALUATIONS.length - 1];
     
     const handleSelectEval = (evalId: string) => {
@@ -53,16 +75,44 @@ export const ModelEvaluationView: React.FC = () => {
         );
     };
 
+    const handleLegendClick = (data: any) => {
+        const { dataKey } = data;
+        setHiddenChartLines(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(dataKey)) {
+                newSet.delete(dataKey);
+            } else {
+                newSet.add(dataKey);
+            }
+            return newSet;
+        });
+    };
+
     const selectedEvals = MOCK_MODEL_EVALUATIONS.filter(e => selectedEvalIds.includes(e.id));
-    const chartData = MOCK_MODEL_EVALUATIONS.map(ev => {
-        const dataPoint: {[key: string]: string | number} = { name: `${ev.modelName} ${ev.version}` };
-        if (selectedEvalIds.includes(ev.id)) {
-            dataPoint[`${ev.id}-precision`] = ev.precision;
-            dataPoint[`${ev.id}-recall`] = ev.recall;
-            dataPoint[`${ev.id}-f1Score`] = ev.f1Score;
+    
+    const { chartData, allModelNames } = useMemo(() => {
+        const modelNames = [...new Set(MOCK_MODEL_EVALUATIONS.map(ev => ev.modelName))];
+        const dataByDate: Record<string, { name: string; [modelName: string]: number | string }> = {};
+
+        MOCK_MODEL_EVALUATIONS.forEach(ev => {
+            if (!dataByDate[ev.evaluatedAt]) {
+                dataByDate[ev.evaluatedAt] = { name: ev.evaluatedAt };
+            }
+            dataByDate[ev.evaluatedAt][ev.modelName] = ev.f1Score;
+        });
+
+        const sortedData = Object.values(dataByDate).sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
+        
+        // Forward fill data to connect lines
+        for (let i = 1; i < sortedData.length; i++) {
+            for (const modelName of modelNames) {
+                if (sortedData[i][modelName] === undefined && sortedData[i-1][modelName] !== undefined) {
+                    sortedData[i][modelName] = sortedData[i-1][modelName];
+                }
+            }
         }
-        return dataPoint;
-    });
+        return { chartData: sortedData, allModelNames: modelNames };
+    }, []);
 
     const COLORS = ["#3B82F6", "#F97316", "#22C55E", "#EF4444", "#8B5CF6"];
 
@@ -97,14 +147,24 @@ export const ModelEvaluationView: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Trend Over Versions</h3>
                 <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={MOCK_MODEL_EVALUATIONS} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                        <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                            <XAxis dataKey="version" stroke="#6B7280" fontSize={12} />
+                            <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} />
                             <YAxis stroke="#6B7280" fontSize={12} domain={[0.8, 1]} />
-                            <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }} />
-                            <Legend />
-                            {selectedEvals.map((ev, index) => (
-                                <Line key={ev.id} type="monotone" dataKey="f1Score" data={MOCK_MODEL_EVALUATIONS.filter(e => e.id === ev.id)} name={`${ev.modelName} F1`} stroke={COLORS[index % COLORS.length]} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend onClick={handleLegendClick} wrapperStyle={{ paddingTop: '20px' }} />
+                            {allModelNames.map((modelName, index) => (
+                                <Line 
+                                    key={modelName} 
+                                    type="monotone" 
+                                    dataKey={modelName} 
+                                    name={modelName} 
+                                    stroke={hiddenChartLines.has(modelName) ? 'transparent' : COLORS[index % COLORS.length]} 
+                                    strokeWidth={2} 
+                                    dot={{ r: 4 }} 
+                                    activeDot={{ r: 6 }} 
+                                    connectNulls 
+                                />
                             ))}
                         </LineChart>
                     </ResponsiveContainer>

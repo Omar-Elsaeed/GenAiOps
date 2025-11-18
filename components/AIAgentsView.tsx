@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MOCK_AGENT_TEMPLATES, ShieldCheckIcon, TrashIcon, EllipsisVerticalIcon, PencilIcon, DocumentDuplicateIcon, BookmarkSquareIcon } from '../constants';
+import { ShieldCheckIcon, TrashIcon, EllipsisVerticalIcon, PencilIcon, DocumentDuplicateIcon, BookmarkSquareIcon } from '../constants';
 // FIX: Added TemplateCategory to the import to be used in the SaveTemplateModal
 import type { AIAgent, AgentVersion, BenchmarkResult, AgentTemplate, GovernancePolicy, SensitivityLevel, PolicyCategory, TemplateCategory } from '../types';
 import { runPrompt, rateResponseQuality } from '../services/geminiService';
@@ -639,7 +640,7 @@ interface AIAgentsViewProps {
 
 export const AIAgentsView: React.FC<AIAgentsViewProps> = ({ agents, onSaveAgent, onDeleteAgent, policies }) => {
   const [liveAgents, setLiveAgents] = useState<AIAgent[]>(agents);
-  const [agentTemplates, setAgentTemplates] = useState<AgentTemplate[]>(MOCK_AGENT_TEMPLATES);
+  const [agentTemplates, setAgentTemplates] = useState<AgentTemplate[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -919,6 +920,20 @@ export const AIAgentsView: React.FC<AIAgentsViewProps> = ({ agents, onSaveAgent,
     });
   }, [liveAgents, sortColumn, sortDirection]);
 
+  if (agents.length === 0) {
+      return (
+        <div className="text-center py-16 px-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <h3 className="text-xl font-semibold text-gray-800">No Agents Found</h3>
+            <p className="text-gray-500 mt-2">Get started by creating your first AI agent.</p>
+            <button
+                onClick={() => handleOpenModal(null)}
+                className="mt-6 flex items-center mx-auto space-x-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light"
+            >
+                <span>Create New Agent</span>
+            </button>
+        </div>
+      );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Project, View, NavItem, NavSection } from '../types';
 import { FolderIcon, ChevronDownIcon, BellIcon, CogIcon } from '../constants';
@@ -5,7 +6,7 @@ import { FolderIcon, ChevronDownIcon, BellIcon, CogIcon } from '../constants';
 interface HeaderProps {
   currentView: View;
   onMenuClick: () => void;
-  currentProject: Project;
+  currentProject: Project | null; // Allow project to be null
   setCurrentProject: (project: Project) => void;
   projects: Project[];
   navItems: (NavItem | NavSection)[];
@@ -81,19 +82,24 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onMenuClick, curren
       <div className="flex items-center space-x-4">
         <div className="relative">
           <select 
-            value={currentProject.id}
+            value={currentProject?.id || ''}
             onChange={(e) => {
               const selectedProject = projects.find(p => p.id === e.target.value);
               if (selectedProject) {
                 setCurrentProject(selectedProject);
               }
             }}
-            className="appearance-none bg-slate-800/50 border border-slate-700 text-slate-200 text-sm font-semibold rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 pr-8 py-2 hover:bg-slate-800 transition-colors"
+            disabled={!currentProject}
+            className="appearance-none bg-slate-800/50 border border-slate-700 text-slate-200 text-sm font-semibold rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 pr-8 py-2 hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Select Project"
           >
-            {projects.map(project => (
-              <option key={project.id} value={project.id}>{project.name}</option>
-            ))}
+            {projects.length > 0 ? (
+                projects.map(project => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))
+            ) : (
+                <option value="" disabled>No Projects</option>
+            )}
           </select>
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
             <FolderIcon className="h-5 w-5"/>

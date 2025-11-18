@@ -185,13 +185,11 @@ ${response}
 const getCostDataFunctionDeclaration: FunctionDeclaration = {
   name: 'get_cost_data',
   description: 'Get the daily cost data for the last 7 days to display in a chart.',
-  parameters: { type: Type.OBJECT, properties: {} },
 };
 
 const getLatencyDataFunctionDeclaration: FunctionDeclaration = {
   name: 'get_latency_data',
   description: 'Get the average latency data for the last 24 hours to display in a chart.',
-  parameters: { type: Type.OBJECT, properties: {} },
 };
 
 export const availableFunctions: { [key: string]: () => any } = {
@@ -219,7 +217,7 @@ export const sendMessage = async (chat: Chat, message: string): Promise<Generate
 
 export const sendFunctionResponse = async (chat: Chat, functionCall: FunctionCall, functionResult: any): Promise<GenerateContentResponse> => {
   const response = await chat.sendMessage({
-      parts: [{
+      message: [{
           functionResponse: {
               name: functionCall.name,
               response: functionResult,
@@ -362,6 +360,7 @@ Your suggestions should be clear, concise, and formatted in markdown. Explain *w
   }
 };
 
+
 export const analyzeUserFeedback = async (feedbackText: string): Promise<UserFeedbackAnalysis> => {
   try {
     const response = await ai.models.generateContent({
@@ -409,4 +408,86 @@ ${feedbackText}
     // You could throw the error or return a default error object
     throw new Error('Failed to analyze user feedback.');
   }
+};
+
+// --- NEW RESPONSIBLE AI SERVICE FUNCTIONS ---
+
+export const explainResponse = async (systemInstruction: string, userPrompt: string, modelResponse: string): Promise<string> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Act as an AI explainability expert. Given the following context, explain in simple, clear terms why the model likely generated the given response. Focus on which parts of the user prompt and system instruction were most influential. Format your response in markdown.
+
+**System Instruction:**
+---
+${systemInstruction}
+---
+
+**User Prompt:**
+---
+${userPrompt}
+---
+
+**Model's Response:**
+---
+${modelResponse}
+---
+`,
+            config: { temperature: 0.3 },
+        });
+        return response.text;
+    } catch (error) {
+        console.error("Error generating explanation:", error);
+        return `An error occurred while generating the explanation. Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+};
+
+export type PIIFinding = {
+    type: string;
+    text: string;
+    startIndex: number;
+};
+
+export const scanForPII = async (text: string): Promise<{ findings: PIIFinding[] }> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Analyze the following text and identify any Personally Identifiable Information (PII). Categorize each finding.
+
+**Text to Analyze:**
+---
+${text}
+---
+`,
+            config: {
+                temperature: 0.1,
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        findings: {
+                            type: Type.ARRAY,
+                            description: "A list of identified PII entities.",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    type: { type: Type.STRING, description: "Type of PII (e.g., EMAIL, PHONE_NUMBER, PERSON_NAME, ADDRESS)." },
+                                    text: { type: Type.STRING, description: "The identified PII text." },
+                                    startIndex: { type: Type.NUMBER, description: "The starting index of the PII in the original text." }
+                                },
+                                required: ["type", "text", "startIndex"]
+                            }
+                        }
+                    },
+                    required: ["findings"]
+                },
+            },
+        });
+        let jsonString = response.text.trim();
+        if (jsonString.startsWith('```json')) { jsonString = jsonString.substring(7, jsonString.length - 3).trim(); }
+        return JSON.parse(jsonString) as { findings: PIIFinding[] };
+    } catch (error) {
+        console.error("Error scanning for PII:", error);
+        throw new Error('Failed to scan for PII.');
+    }
 };

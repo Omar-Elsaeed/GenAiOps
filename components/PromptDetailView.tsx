@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { MODEL_COSTS } from '../constants';
 import { CloudArrowUpIcon } from '../constants';
@@ -60,7 +59,13 @@ const VersionHistoryTable: React.FC<{ versions: PromptVersion[] }> = ({ versions
     </div>
 );
 
-const ConfigurationTab: React.FC<{ prompt: RegisteredPrompt; ref: React.Ref<HTMLTextAreaElement> }> = React.forwardRef(({ prompt }, ref) => {
+interface ConfigurationTabProps {
+  prompt: RegisteredPrompt;
+}
+
+const ConfigurationTab = React.forwardRef<HTMLTextAreaElement, ConfigurationTabProps>(
+  function ConfigurationTab(props, ref) {
+    const { prompt } = props;
     const [systemInstruction, setSystemInstruction] = useState(prompt.systemInstruction);
     const [isSaving, setIsSaving] = useState(false);
     const isModified = systemInstruction !== prompt.systemInstruction;
@@ -104,6 +109,26 @@ const ConfigurationTab: React.FC<{ prompt: RegisteredPrompt; ref: React.Ref<HTML
         </div>
     );
 });
+
+const ComplianceResultCard: React.FC<{ result: ComplianceCheckResult }> = ({ result }) => {
+    const statusInfo = {
+        Pass: { icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-green-400', bg: 'bg-green-900/20' },
+        Fail: { icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-red-400', bg: 'bg-red-900/20' },
+        Warning: { icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', color: 'text-yellow-400', bg: 'bg-yellow-900/20' },
+    };
+    const { icon, color, bg } = statusInfo[result.status];
+    return (
+        <div className={`p-4 rounded-lg border flex items-start space-x-4 ${bg} border-slate-700`}>
+             <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 flex-shrink-0 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+            </svg>
+            <div>
+                <h4 className="font-semibold text-slate-100">{result.policyName}: <span className={color}>{result.status}</span></h4>
+                <p className="text-sm text-slate-300">{result.details}</p>
+            </div>
+        </div>
+    );
+};
 
 const ComplianceTab: React.FC<{ prompt: RegisteredPrompt; policies: GovernancePolicy[] }> = ({ prompt, policies }) => {
     const [scanResults, setScanResults] = useState<ComplianceCheckResult[]>([]);
@@ -179,25 +204,6 @@ const ComplianceTab: React.FC<{ prompt: RegisteredPrompt; policies: GovernancePo
     );
 };
 
-const ComplianceResultCard: React.FC<{ result: ComplianceCheckResult }> = ({ result }) => {
-    const statusInfo = {
-        Pass: { icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-green-400', bg: 'bg-green-900/20' },
-        Fail: { icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-red-400', bg: 'bg-red-900/20' },
-        Warning: { icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', color: 'text-yellow-400', bg: 'bg-yellow-900/20' },
-    };
-    const { icon, color, bg } = statusInfo[result.status];
-    return (
-        <div className={`p-4 rounded-lg border flex items-start space-x-4 ${bg} border-slate-700`}>
-             <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 flex-shrink-0 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-            </svg>
-            <div>
-                <h4 className="font-semibold text-slate-100">{result.policyName}: <span className={color}>{result.status}</span></h4>
-                <p className="text-sm text-slate-300">{result.details}</p>
-            </div>
-        </div>
-    );
-};
 
 const TabButton: React.FC<{isActive: boolean, onClick: ()=>void, children: React.ReactNode}> = ({isActive, onClick, children}) => (
     <button onClick={onClick} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-slate-300 hover:bg-slate-700'}`}>

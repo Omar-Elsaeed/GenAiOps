@@ -2,9 +2,8 @@
 
 import React, { useState } from 'react';
 import { PhaseDetailModal } from './PhaseDetailModal';
-import { CreateProjectModal } from './CreateProjectModal';
 import type { Project, View, ProjectPhase } from '../types';
-import { ChipIcon, DatabaseIcon, BeakerIcon, ClipboardCheckIcon, PlusIcon, createNewProjectPhases } from '../constants';
+import { ChipIcon, DatabaseIcon, BeakerIcon, ClipboardCheckIcon, PlusIcon, LightBulbIcon } from '../constants';
 
 const getStatusColorClasses = (status: ProjectPhase['status']) => {
     switch (status) {
@@ -86,16 +85,35 @@ const DashboardMetricCard: React.FC<{
 };
 
 interface ProjectsViewProps {
-  currentProject: Project;
+  currentProject: Project | null;
   onUpdateProject: (project: Project) => void;
-  onAddProject: (project: Project) => void;
+  onAddProject: (view: View) => void;
   navigate: (view: View) => void;
 }
+
+const NoProjectsView: React.FC<{ onCreateProject: () => void }> = ({ onCreateProject }) => (
+    <div className="text-center py-16 px-6 bg-charcoal rounded-xl border border-slate-800 shadow-lg">
+        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
+             <LightBulbIcon className="w-8 h-8 text-white"/>
+        </div>
+        <h2 className="text-2xl font-bold text-slate-100">Welcome to GenAI Ops Hub</h2>
+        <p className="text-slate-400 mt-2 max-w-lg mx-auto">
+            This is your central workspace to manage the entire lifecycle of your AI products, from ideation to governance.
+        </p>
+        <button
+            onClick={onCreateProject}
+            className="mt-8 flex items-center mx-auto space-x-2 px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-charcoal focus:ring-primary-light transition duration-200 text-lg"
+        >
+            <PlusIcon className="w-6 h-6"/>
+            <span>Create Your First AI Project</span>
+        </button>
+    </div>
+);
+
 
 export const ProjectsView: React.FC<ProjectsViewProps> = ({ currentProject, onUpdateProject, onAddProject, navigate }) => {
     const [selectedPhase, setSelectedPhase] = useState<ProjectPhase | null>(null);
     const [isPhaseModalOpen, setIsPhaseModalOpen] = useState(false);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const handlePhaseClick = (phase: ProjectPhase) => {
         setSelectedPhase(phase);
@@ -108,36 +126,35 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({ currentProject, onUp
     };
 
     const handleUpdatePhase = (updatedPhase: ProjectPhase) => {
+        if(!currentProject) return;
         const updatedPhases = currentProject.phases.map(p => 
             p.id === updatedPhase.id ? updatedPhase : p
         );
         onUpdateProject({ ...currentProject, phases: updatedPhases });
     };
 
-    const handleSaveNewProject = ({ name, description }: { name: string, description: string }) => {
-        const newProject: Project = {
-            id: `proj-${Date.now()}`,
-            name,
-            description,
-            createdAt: new Date().toISOString().split('T')[0],
-            phases: createNewProjectPhases(),
-            agentCount: 0,
-            promptCount: 0,
-            testCount: 0,
-            modelEvalCount: 0,
-            integrationCount: 0,
-        };
-        onAddProject(newProject);
-        setIsCreateModalOpen(false);
-    };
+    if (!currentProject) {
+        return <NoProjectsView onCreateProject={() => onAddProject('project-ideation')} />;
+    }
 
     const completedPhases = currentProject.phases.filter(p => p.status === 'Completed').length;
     
     return (
         <div className="space-y-8">
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-900">{currentProject.name}</h2>
-                <p className="text-sm text-gray-500 mt-1">{currentProject.description}</p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">{currentProject.name}</h2>
+                        <p className="text-sm text-gray-500 mt-1">{currentProject.description}</p>
+                    </div>
+                     <button
+                        onClick={() => onAddProject('project-ideation')}
+                        className="flex-shrink-0 flex items-center space-x-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition duration-200"
+                    >
+                        <PlusIcon className="w-5 h-5"/>
+                        <span>New Project</span>
+                    </button>
+                </div>
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     <DashboardMetricCard title="AI Agents" value={currentProject.agentCount} icon={<ChipIcon className="w-6 h-6" />} onClick={() => navigate('agents')} color="primary"/>
                     <DashboardMetricCard title="Prompts" value={currentProject.promptCount} icon={<DatabaseIcon className="w-6 h-6" />} onClick={() => navigate('registry')} color="secondary"/>
@@ -156,13 +173,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({ currentProject, onUp
             <div>
                  <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
                     <h3 className="text-xl font-semibold text-gray-900">Project Lifecycle Hub</h3>
-                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="mt-4 sm:mt-0 flex items-center space-x-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition duration-200"
-                    >
-                        <PlusIcon className="w-5 h-5"/>
-                        <span>Create New Project</span>
-                    </button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {currentProject.phases.map(phase => (
@@ -179,12 +189,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({ currentProject, onUp
                     onUpdate={handleUpdatePhase}
                 />
             )}
-
-            <CreateProjectModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSave={handleSaveNewProject}
-            />
         </div>
     );
 };

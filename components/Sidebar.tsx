@@ -50,6 +50,7 @@ const NavSectionHeader: React.FC<{ title: string; isOpen: boolean; isActive: boo
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, isOpen, setIsOpen, navigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
+  // FIX: Add 'project-ideation' to the parentViewMap to satisfy the Record<View, View> type requirement.
   const parentViewMap: Record<View, View> = {
     'projects': 'projects',
     'problem-framing': 'problem-framing',
@@ -73,6 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, isOpen, setIsOpen
     'playground': 'playground',
     'tools': 'tools',
     'chat': 'chat',
+    'project-ideation': 'project-ideation',
   };
 
   const findParentSection = (view: View) => {

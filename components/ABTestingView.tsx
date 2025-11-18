@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { ABTest, RegisteredPrompt, ABTestVariant } from '../types';
 import { ABTestReportModal } from './ABTestReportModal';
@@ -195,7 +196,9 @@ export const ABTestingView: React.FC<ABTestingViewProps> = ({ tests, prompts, on
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition duration-200"
+              disabled={prompts.length < 2}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition duration-200 disabled:bg-slate-500 disabled:cursor-not-allowed"
+              title={prompts.length < 2 ? "You need at least two prompts in the registry to create a test." : "Create a new A/B test"}
             >
               <span>Create New Test</span>
             </button>
@@ -207,8 +210,11 @@ export const ABTestingView: React.FC<ABTestingViewProps> = ({ tests, prompts, on
             <ABTestCard key={test.id} test={test} prompts={prompts} onViewReport={handleViewReport} />
             ))
         ) : (
-            <div className="text-center py-12 bg-charcoal rounded-xl border border-slate-800 shadow-sm">
-                <p className="text-slate-400">No tests found for the selected status.</p>
+            <div className="text-center py-16 bg-charcoal rounded-xl border border-slate-800 shadow-sm">
+                <p className="text-lg font-medium text-slate-300">No A/B Tests Found</p>
+                <p className="text-slate-400 mt-2">
+                    {statusFilter === 'all' ? 'Create your first A/B test to compare prompt performance.' : `No tests found with the status "${statusFilter}".`}
+                </p>
             </div>
         )}
       </div>

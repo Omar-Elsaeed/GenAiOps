@@ -1,4 +1,3 @@
-
 import type React from 'react';
 
 export type View = 
@@ -31,7 +30,9 @@ export type View =
   // Core Tools
   | 'playground' 
   | 'tools'
-  | 'chat';
+  | 'chat'
+  // New Project Creation
+  | 'project-ideation';
 
 
 export type NavItem = {
@@ -174,7 +175,7 @@ export interface ModelEval {
 export interface BiasFinding {
   id: string;
   demographic: string;
-  metric: 'False Positive Rate' | 'False Negative Rate';
+  metric: 'False Positive Rate' | 'False Negative Rate' | 'Selection Rate' | 'Positive Predictive Value';
   value: number;
   threshold: number;
   isBiased: boolean;
@@ -265,6 +266,54 @@ export interface ProjectPhase {
   content: string; // To store user notes, research, etc.
 }
 
+export interface AIIdea {
+  // Page 1
+  ideaName: string;
+  author: string;
+  problem: {
+    processOptimization: boolean;
+    newFeature: boolean;
+    newValueStream: boolean;
+  };
+  problemStatement: string;
+  personas: string;
+  ideaDescription: string;
+  familiesOfSolutions: {
+    [key: string]: boolean;
+  };
+  architecture: 'standalone' | 'connects';
+  architectureDetails: string;
+
+  // Page 2
+  implementationOptions: {
+    [key: string]: boolean;
+  };
+  valueForUser: string;
+  dataAvailable: string;
+  ethicalRisks: string;
+  toBeArchitecture: string;
+  dataSources: string;
+
+  // Page 3
+  time: string;
+  roi: string;
+  dependencies: {
+    hasDependencies: 'yes' | 'no' | 'dont_know';
+    details: string;
+  };
+  budget: string;
+  comment: string;
+  requiredResources: {
+    people: string;
+    hardware: string;
+  };
+  buyOrFineTuneDetails: string;
+  buyMaturity: string;
+  kpis: string;
+  riskStrategies: string;
+  marketStandard: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -276,6 +325,7 @@ export interface Project {
   testCount: number;
   modelEvalCount: number;
   integrationCount: number;
+  idea: AIIdea;
 }
 
 export interface BenchmarkResult {

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { DatasetInfo } from '../types';
 import { NewDatasetModal } from './NewDatasetModal';
@@ -60,34 +61,41 @@ export const DataHubView: React.FC<DataHubViewProps> = ({ datasets, onSaveDatase
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Datasets</h3>
                     <p className="text-sm text-gray-500 mb-6">Manage datasets for model training, evaluation, and fine-tuning.</p>
                     
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Record Count</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                                    <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {datasets.map((dataset) => (
-                                    <tr key={dataset.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{dataset.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dataset.source}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><StatusBadge status={dataset.status} /></td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dataset.recordCount.toLocaleString()}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dataset.createdAt}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onClick={() => handleViewDetails(dataset)} className="text-primary hover:text-primary-light transition-colors">Details</button>
-                                        </td>
+                    {datasets.length === 0 ? (
+                        <div className="text-center py-12">
+                            <h4 className="text-lg font-medium text-gray-600">No Datasets Defined</h4>
+                            <p className="text-sm text-gray-500 mt-1">Define a new dataset to get started.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Record Count</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {datasets.map((dataset) => (
+                                        <tr key={dataset.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{dataset.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dataset.source}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><StatusBadge status={dataset.status} /></td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dataset.recordCount.toLocaleString()}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dataset.createdAt}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button onClick={() => handleViewDetails(dataset)} className="text-primary hover:text-primary-light transition-colors">Details</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
             <NewDatasetModal 

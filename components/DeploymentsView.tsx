@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { DeployedArtifact, AIAgent, RegisteredPrompt } from '../types';
 import { CloudArrowUpIcon } from '../constants';
@@ -49,6 +50,8 @@ export const DeploymentsView: React.FC<DeploymentsViewProps> = ({ deployments, a
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className="mt-4 sm:mt-0 flex items-center space-x-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition duration-200"
+                    disabled={agents.length === 0 && prompts.length === 0}
+                    title={agents.length === 0 && prompts.length === 0 ? "Create an Agent or Prompt first" : "Deploy a new artifact"}
                 >
                     <CloudArrowUpIcon className="w-5 h-5"/>
                     <span>New Deployment</span>
@@ -59,42 +62,49 @@ export const DeploymentsView: React.FC<DeploymentsViewProps> = ({ deployments, a
                 <h3 className="text-lg font-semibold text-slate-100 mb-4">Deployment History & Status</h3>
                 <p className="text-sm text-slate-400 mb-6">Monitor your deployed AI agents and prompts across different environments.</p>
                 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-700">
-                        <thead className="">
-                            <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Name</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Type</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Version</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Environment</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Deployed At</th>
-                                <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-700">
-                            {deployments.map((artifact) => (
-                                <tr key={artifact.id} className="hover:bg-slate-800/50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-100">{artifact.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{artifact.type}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">v{artifact.version}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">{artifact.environment}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={artifact.status} /></td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{artifact.deployedAt}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button 
-                                            onClick={() => handleRollbackClick(artifact)} 
-                                            className="text-primary hover:text-primary-light transition-colors disabled:text-slate-500 disabled:cursor-not-allowed disabled:no-underline"
-                                            disabled={artifact.status === 'Rolled Back'}
-                                        >
-                                            Rollback
-                                        </button>
-                                    </td>
+                {deployments.length === 0 ? (
+                    <div className="text-center py-12">
+                        <h4 className="text-lg font-medium text-slate-300">No Deployments Found</h4>
+                        <p className="text-sm text-slate-400 mt-1">Deploy an agent or prompt to see its status here.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-slate-700">
+                            <thead className="">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Name</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Type</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Version</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Environment</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Deployed At</th>
+                                    <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-slate-700">
+                                {deployments.map((artifact) => (
+                                    <tr key={artifact.id} className="hover:bg-slate-800/50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-100">{artifact.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{artifact.type}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">v{artifact.version}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">{artifact.environment}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={artifact.status} /></td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{artifact.deployedAt}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button 
+                                                onClick={() => handleRollbackClick(artifact)} 
+                                                className="text-primary hover:text-primary-light transition-colors disabled:text-slate-500 disabled:cursor-not-allowed disabled:no-underline"
+                                                disabled={artifact.status === 'Rolled Back'}
+                                            >
+                                                Rollback
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
             <NewDeploymentModal

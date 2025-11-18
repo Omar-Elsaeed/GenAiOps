@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -12,7 +11,6 @@ import { ABTestingView } from './components/ABTestingView';
 import { AIAgentsView } from './components/AIAgentsView';
 import { ProjectsView } from './components/ProjectsView';
 import { ToolsView } from './components/ToolsView';
-import { ProblemFramingView } from './components/ProblemFramingView';
 import { DataHubView } from './components/DataHubView';
 import { ModelEvaluationView } from './components/ModelEvaluationView';
 import { StakeholderReportsView } from './components/StakeholderReportsView';
@@ -25,39 +23,55 @@ import { DesignIdeationView } from './components/DesignIdeationView';
 import { DeploymentsView } from './components/DeploymentsView';
 import { LaunchFeedbackView } from './components/LaunchFeedbackView';
 import { DataGovernanceView } from './components/DataGovernanceView';
+import { ProjectIdeationView } from './components/ProjectIdeationView';
 
-import { NAV_ITEMS, MOCK_PROJECTS_DATA, MOCK_AI_AGENTS, MOCK_PROMPTS, MOCK_AB_TESTS, MOCK_DEPLOYMENTS, MODEL_COSTS, MOCK_DATASETS, MOCK_GOVERNANCE_POLICIES } from './constants';
-import type { View, Project, RegisteredPrompt, AIAgent, ABTest, DeployedArtifact, DatasetInfo, GovernancePolicy } from './types';
+
+import { NAV_ITEMS, createNewProjectPhases } from './constants';
+import type { View, Project, RegisteredPrompt, AIAgent, ABTest, DeployedArtifact, DatasetInfo, GovernancePolicy, AIIdea } from './types';
 
 const App: React.FC = () => {
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS_DATA);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [currentView, setCurrentView] = useState<View>('projects');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<Project>(projects[0]);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
   // Centralized state management
-  const [agents, setAgents] = useState<AIAgent[]>(MOCK_AI_AGENTS);
-  const [prompts, setPrompts] = useState<RegisteredPrompt[]>(MOCK_PROMPTS);
-  const [abTests, setAbTests] = useState<ABTest[]>(MOCK_AB_TESTS);
-  const [deployments, setDeployments] = useState<DeployedArtifact[]>(MOCK_DEPLOYMENTS);
-  const [datasets, setDatasets] = useState<DatasetInfo[]>(MOCK_DATASETS);
-  const [policies, setPolicies] = useState<GovernancePolicy[]>(MOCK_GOVERNANCE_POLICIES);
+  const [agents, setAgents] = useState<AIAgent[]>([]);
+  const [prompts, setPrompts] = useState<RegisteredPrompt[]>([]);
+  const [abTests, setAbTests] = useState<ABTest[]>([]);
+  const [deployments, setDeployments] = useState<DeployedArtifact[]>([]);
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
+  const [policies, setPolicies] = useState<GovernancePolicy[]>([]);
 
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [promptForPlayground, setPromptForPlayground] = useState<RegisteredPrompt | null>(null);
+  
+  // Select first project on load if available
+  useEffect(() => {
+    if (projects.length > 0 && !currentProject) {
+      setCurrentProject(projects[0]);
+    }
+    if(projects.length === 0) {
+        setCurrentProject(null);
+    }
+  }, [projects, currentProject]);
+
 
   // Update project counts whenever the underlying data changes
   useEffect(() => {
+    if(!currentProject) return;
+
     setProjects(prevProjects => 
-      prevProjects.map(p => ({
-        ...p,
-        agentCount: agents.length,
-        promptCount: prompts.length,
-        testCount: abTests.length,
-        // Assuming other counts are static for now
-      }))
+      prevProjects.map(p => 
+          p.id === currentProject.id ? {
+            ...p,
+            agentCount: agents.length,
+            promptCount: prompts.length,
+            testCount: abTests.length,
+          } : p
+      )
     );
-  }, [agents, prompts, abTests]);
+  }, [agents, prompts, abTests, currentProject]);
 
   const handleSaveAgent = (agentToSave: AIAgent) => {
     setAgents(prev => {
@@ -83,7 +97,7 @@ const App: React.FC = () => {
       userPrompt: promptToSave.userPrompt,
       createdAt: new Date().toISOString().split('T')[0],
       avgLatency: Math.floor(Math.random() * 400) + 100,
-      costPerKTokens: MODEL_COSTS[promptToSave.model],
+      costPerKTokens: 0, // Should be calculated
       usage24h: 0,
       errorRate: 0,
       versionHistory: [{
@@ -145,25 +159,43 @@ const App: React.FC = () => {
     setProjects(prevProjects => 
       prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)
     );
-    if (currentProject.id === updatedProject.id) {
+    if (currentProject && currentProject.id === updatedProject.id) {
       setCurrentProject(updatedProject);
     }
   };
   
-  const handleAddNewProject = (newProject: Project) => {
+  const handleAddNewProject = (idea: AIIdea) => {
+    const newProject: Project = {
+        id: `proj-${Date.now()}`,
+        name: idea.ideaName,
+        description: idea.problemStatement,
+        createdAt: new Date().toISOString().split('T')[0],
+        phases: createNewProjectPhases(),
+        agentCount: 0,
+        promptCount: 0,
+        testCount: 0,
+        modelEvalCount: 0,
+        integrationCount: 0,
+        idea: idea,
+    };
     setProjects(prevProjects => [newProject, ...prevProjects]);
     setCurrentProject(newProject);
+    navigate('projects');
   };
 
   const renderView = () => {
+    if (currentView !== 'project-ideation' && projects.length === 0) {
+        return <ProjectsView currentProject={null} onUpdateProject={handleUpdateProject} onAddProject={navigate} navigate={navigate} />;
+    }
+    
     switch (currentView) {
       // Workspace
       case 'projects':
-        return <ProjectsView currentProject={currentProject} onUpdateProject={handleUpdateProject} onAddProject={handleAddNewProject} navigate={navigate} />;
+        return <ProjectsView currentProject={currentProject} onUpdateProject={handleUpdateProject} onAddProject={navigate} navigate={navigate} />;
+      case 'project-ideation':
+        return <ProjectIdeationView onAddProject={handleAddNewProject} navigate={navigate} />;
 
       // Phase 1-3: Strategy & Research
-      case 'problem-framing':
-        return <ProblemFramingView />;
       case 'hypothesis-goals':
         return <HypothesisView />;
       case 'market-research':
@@ -207,7 +239,7 @@ const App: React.FC = () => {
       case 'data-governance':
         return <DataGovernanceView />;
       case 'responsible-ai':
-        return <ResponsibleAIView />;
+        return <ResponsibleAIView datasets={datasets} onSaveDataset={handleSaveDataset} />;
         
       // Core Tools
       case 'playground':
@@ -218,7 +250,7 @@ const App: React.FC = () => {
         return <ChatView />;
         
       default:
-        return <ProjectsView currentProject={currentProject} onUpdateProject={handleUpdateProject} onAddProject={handleAddNewProject} navigate={navigate} />;
+        return <ProjectsView currentProject={currentProject} onUpdateProject={handleUpdateProject} onAddProject={navigate} navigate={navigate} />;
     }
   };
 
@@ -234,7 +266,7 @@ const App: React.FC = () => {
         <Header 
           currentView={currentView}
           onMenuClick={() => setSidebarOpen(!isSidebarOpen)}
-          currentProject={projects.find(p => p.id === currentProject.id) || currentProject}
+          currentProject={projects.find(p => p.id === currentProject?.id) || currentProject}
           setCurrentProject={(project) => {
               const fullProject = projects.find(p => p.id === project.id);
               if (fullProject) setCurrentProject(fullProject);
